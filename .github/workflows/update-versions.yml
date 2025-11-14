@@ -21,11 +21,14 @@ jobs:
 
       - name: Fetch latest releases
         id: fetch_latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           LATEST_RUNNER=$(gh api repos/actions/runner/releases -q '.[0].tag_name' | tr -d 'v')
           LATEST_HOOKS=$(gh api repos/actions/runner-container-hooks/releases -q '.[0].tag_name' | tr -d 'v')
           echo "LATEST_RUNNER=$LATEST_RUNNER" >> $GITHUB_ENV
           echo "LATEST_HOOKS=$LATEST_HOOKS" >> $GITHUB_ENV
+
 
       - name: Update versions.env if needed
         id: update
@@ -39,6 +42,8 @@ jobs:
             sed -i "s/^RUNNER_CONTAINER_HOOKS_VERSION=.*/RUNNER_CONTAINER_HOOKS_VERSION=$LATEST_HOOKS/" versions.env
             UPDATED=true
           fi
+          git status
+          git diff
           echo "UPDATED=$UPDATED" >> $GITHUB_OUTPUT
 
       - name: Create or update PR if versions changed
