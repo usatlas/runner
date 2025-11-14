@@ -1,0 +1,65 @@
+name: Update Runner Versions
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  update-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Read current versions
+        id: read_versions
+        run: |
+          source versions.env
+          echo "CURRENT_RUNNER_VERSION=$RUNNER_VERSION" >> $GITHUB_ENV
+          echo "CURRENT_HOOKS_VERSION=$RUNNER_CONTAINER_HOOKS_VERSION" >> $GITHUB_ENV
+
+      - name: Fetch latest releases
+        id: fetch_latest
+        run: |
+          LATEST_RUNNER=$(gh api repos/actions/runner/releases -q '.[0].tag_name' | tr -d 'v')
+          LATEST_HOOKS=$(gh api repos/actions/runner-container-hooks/releases -q '.[0].tag_name' | tr -d 'v')
+          echo "LATEST_RUNNER=$LATEST_RUNNER" >> $GITHUB_ENV
+          echo "LATEST_HOOKS=$LATEST_HOOKS" >> $GITHUB_ENV
+
+      - name: Update versions.env if needed
+        id: update
+        run: |
+          UPDATED=false
+          if [ "$CURRENT_RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
+            sed -i "s/^RUNNER_VERSION=.*/RUNNER_VERSION=$LATEST_RUNNER/" versions.env
+            UPDATED=true
+          fi
+          if [ "$CURRENT_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
+            sed -i "s/^RUNNER_CONTAINER_HOOKS_VERSION=.*/RUNNER_CONTAINER_HOOKS_VERSION=$LATEST_HOOKS/" versions.env
+            UPDATED=true
+          fi
+          echo "UPDATED=$UPDATED" >> $GITHUB_OUTPUT
+
+      - name: Create or update PR if versions changed
+        if: steps.update.outputs.UPDATED == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH=update-runner-versions
+          git checkout -B $BRANCH
+          git add versions.env
+          git commit -m "Update GitHub Actions runner versions" || echo "No changes to commit"
+          git push --set-upstream origin $BRANCH --force
+
+          # Check if a PR already exists for this branch
+          EXISTING_PR=$(gh pr list --head $BRANCH --json number -q '.[0].number')
+          if [ -z "$EXISTING_PR" ]; then
+            gh pr create \
+              --title "Update runner and container hooks versions" \
+              --body "Automatically updated runner and container hooks versions." \
+              --base main \
+              --head $BRANCH
+          else
+            echo "PR already exists: #$EXISTING_PR"
+          fi
