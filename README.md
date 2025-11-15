@@ -5,6 +5,18 @@ versions** used by the USATLAS organization. It includes an automated workflow
 that periodically checks for new runner releases and opens a pull request to
 update the pinned versions.
 
+## 🔧 Configuration
+
+The `.env` file stores the pinned versions used in the docker image, for
+example:
+
+```
+RUNNER_VERSION=2.329.0
+RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
+```
+
+These values are automatically updated by the automated version update workflow.
+
 ## 🐳 Docker Image Publishing
 
 Docker images for **Alma9-based GitHub Actions self-hosted runners** are
@@ -64,9 +76,10 @@ docker pull ghcr.io/usatlas/actions-runner:2.329.0-0.8.0
 
 Images are built for both `linux/amd64` and `linux/arm64` architectures.
 
-## 🚀 How It Works
+## 🚀 Automated Version Updates
 
-A scheduled GitHub Actions workflow runs the following process:
+The regularly-scheduled GitHub Actions workflow, powered by `gh` CLI for
+interacting with GitHub's API, runs the following steps:
 
 1. **Fetch latest runner releases** from the official GitHub runners repository.
 2. **Compare versions** against what is currently stored in `.env`.
@@ -76,7 +89,7 @@ A scheduled GitHub Actions workflow runs the following process:
    - A commit is created with a message summarizing exactly what changed.
    - A pull request is automatically opened.
 
-## 📝 Example Commit Message
+### 📝 Example Commit Message
 
 When versions change, the commit message looks like:
 
@@ -87,19 +100,3 @@ Update GitHub Actions runner versions
 ```
 
 Commit messages only include entries for components that actually changed.
-
-## 🔧 Configuration
-
-The `.env` file stores the pinned versions, for example:
-
-```
-RUNNER_VERSION=2.329.0
-RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
-```
-
-These values are automatically updated by the workflow.
-
-## 🤖 Automation Workflow
-
-The regularly-scheduled update job is powered by `gh` CLI (preinstalled on
-runners) for interacting with GitHub.
