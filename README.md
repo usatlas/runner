@@ -18,7 +18,7 @@ published from `main`.
 Images are published to two container registries:
 
 - **CERN GitLab Container Registry**: `gitlab-registry.cern.ch/usatlas/runner`
-- **GitHub Container Registry**: `ghcr.io/kratsg/actions-runner`
+- **GitHub Container Registry**: `ghcr.io/usatlas/actions-runner`
 
 ### Available Tags
 
@@ -51,19 +51,13 @@ version update workflow.
 Pull the latest image:
 
 ```bash
-docker pull ghcr.io/kratsg/actions-runner:latest
+docker pull ghcr.io/usatlas/actions-runner:latest
 ```
 
 Pull a specific pinned version:
 
 ```bash
-docker pull ghcr.io/kratsg/actions-runner:2.329.0-0.8.0
-```
-
-Pull from CERN GitLab registry:
-
-```bash
-docker pull gitlab-registry.cern.ch/usatlas/runner:latest
+docker pull ghcr.io/usatlas/actions-runner:2.329.0-0.8.0
 ```
 
 ### Multi-Platform Support
