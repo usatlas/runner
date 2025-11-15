@@ -58,18 +58,33 @@ jobs:
         run: |
           BRANCH=update-runner-versions
           git checkout -B $BRANCH
+
+          COMMIT_MSG="Update GitHub Actions runner versions"
+
+          # Build a message only for changed versions
+          MSG_LINES=()
+          if [ "$CURRENT_RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
+            MSG_LINES+=("- Runner: [$CURRENT_RUNNER_VERSION](https://github.com/actions/runner/releases/tag/v$CURRENT_RUNNER_VERSION) → [$LATEST_RUNNER](https://github.com/actions/runner/releases/tag/v$LATEST_RUNNER)")
+          fi
+          if [ "$CURRENT_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
+            MSG_LINES+=("- Container Hooks: [$CURRENT_HOOKS_VERSION](https://github.com/actions/runner-container-hooks/releases/tag/v$CURRENT_HOOKS_VERSION) → [$LATEST_HOOKS](https://github.com/actions/runner-container-hooks/releases/tag/v$LATEST_HOOKS)")
+          fi
+
+          if [ ${#MSG_LINES[@]} -gt 0 ]; then
+            COMMIT_MSG=$(printf "Update GitHub Actions runner versions\n\n%s" "$(printf "%s\n" "${MSG_LINES[@]}")")
+          fi
+
           git add .env
-          git commit -m "Update GitHub Actions runner versions" || echo "No changes to commit"
+          git commit -m "$COMMIT_MSG"
           git push --set-upstream origin $BRANCH --force
 
-          # Check if a PR already exists for this branch
+          # Check if a PR already exists
           EXISTING_PR=$(gh pr list --head $BRANCH --json number -q '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
             gh pr create \
               --title "Update runner and container hooks versions" \
-              --body "Automatically updated runner and container hooks versions." \
+              --body "$COMMIT_MSG" \
               --base main \
               --head $BRANCH
           else
             echo "PR already exists: #$EXISTING_PR"
-          fi
