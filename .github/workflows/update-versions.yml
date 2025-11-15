@@ -19,7 +19,7 @@ jobs:
 
       - name: Load current versions
         id: versions
-        uses: actions/dotenv-action@v1.1.4
+        uses: falti/dotenv-action@v1.1.4
         with:
           export-variables: true
 
