@@ -110,13 +110,6 @@ jobs:
       - name: List built images
         run: docker images
 
-      - name: Generate attestation
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build-only.outputs.digest }}
-          push-to-registry: false
-
       - name: Build and publish to registry
         # every PR will trigger a push event on main, so check the push event is actually coming from main
         if:
