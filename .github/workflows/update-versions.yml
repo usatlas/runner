@@ -90,3 +90,4 @@ jobs:
               --head $BRANCH
           else
             echo "PR already exists: #$EXISTING_PR"
+          fi
