@@ -21,7 +21,9 @@ jobs:
         id: versions
         uses: falti/dotenv-action@v1.1.4
         with:
+          log-variables: true
           export-variables: true
+          keys-case: "upper"
 
       - name: Fetch latest releases
         id: fetch_latest
