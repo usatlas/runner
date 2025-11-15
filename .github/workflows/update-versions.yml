@@ -55,6 +55,7 @@ jobs:
         if: steps.update.outputs.UPDATED == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           BRANCH=update-runner-versions
           git checkout -B $BRANCH
@@ -66,6 +67,7 @@ jobs:
           if [ "$CURRENT_RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
             MSG_LINES+=("- Runner: [$CURRENT_RUNNER_VERSION](https://github.com/actions/runner/releases/tag/v$CURRENT_RUNNER_VERSION) → [$LATEST_RUNNER](https://github.com/actions/runner/releases/tag/v$LATEST_RUNNER)")
           fi
+
           if [ "$CURRENT_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
             MSG_LINES+=("- Container Hooks: [$CURRENT_HOOKS_VERSION](https://github.com/actions/runner-container-hooks/releases/tag/v$CURRENT_HOOKS_VERSION) → [$LATEST_HOOKS](https://github.com/actions/runner-container-hooks/releases/tag/v$LATEST_HOOKS)")
           fi
