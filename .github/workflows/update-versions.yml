@@ -37,11 +37,11 @@ jobs:
         id: update
         run: |
           UPDATED=false
-          if [ "$CURRENT_RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
+          if [ "$RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
             sed -i "s/^RUNNER_VERSION=.*/RUNNER_VERSION=$LATEST_RUNNER/" .env
             UPDATED=true
           fi
-          if [ "$CURRENT_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
+          if [ "$RUNNER_CONTAINER_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
             sed -i "s/^RUNNER_CONTAINER_HOOKS_VERSION=.*/RUNNER_CONTAINER_HOOKS_VERSION=$LATEST_HOOKS/" .env
             UPDATED=true
           fi
@@ -64,12 +64,12 @@ jobs:
 
           # Build a message only for changed versions
           MSG_LINES=()
-          if [ "$CURRENT_RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
-            MSG_LINES+=("- Runner: [$CURRENT_RUNNER_VERSION](https://github.com/actions/runner/releases/tag/v$CURRENT_RUNNER_VERSION) → [$LATEST_RUNNER](https://github.com/actions/runner/releases/tag/v$LATEST_RUNNER)")
+          if [ "$RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
+            MSG_LINES+=("- Runner: [$RUNNER_VERSION](https://github.com/actions/runner/releases/tag/v$RUNNER_VERSION) → [$LATEST_RUNNER](https://github.com/actions/runner/releases/tag/v$LATEST_RUNNER)")
           fi
 
-          if [ "$CURRENT_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
-            MSG_LINES+=("- Container Hooks: [$CURRENT_HOOKS_VERSION](https://github.com/actions/runner-container-hooks/releases/tag/v$CURRENT_HOOKS_VERSION) → [$LATEST_HOOKS](https://github.com/actions/runner-container-hooks/releases/tag/v$LATEST_HOOKS)")
+          if [ "$RUNNER_CONTAINER_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
+            MSG_LINES+=("- Container Hooks: [$RUNNER_CONTAINER_HOOKS_VERSION](https://github.com/actions/runner-container-hooks/releases/tag/v$RUNNER_CONTAINER_HOOKS_VERSION) → [$LATEST_HOOKS](https://github.com/actions/runner-container-hooks/releases/tag/v$LATEST_HOOKS)")
           fi
 
           if [ ${#MSG_LINES[@]} -gt 0 ]; then
