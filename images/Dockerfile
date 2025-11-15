@@ -19,7 +19,7 @@ ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 # For HEP_OSLibs: https://gitlab.cern.ch/linuxsupport/rpms/HEP_OSlibs
 RUN dnf install -y curl unzip sudo tar gzip \
     && dnf install -y https://linuxsoft.cern.ch/wlcg/el9/x86_64/wlcg-repo-1.0.0-1.el9.noarch.rpm \
-    && dnf install HEP_OSlibs \
+    && dnf install -y HEP_OSlibs \
     && dnf clean all
 
 # Create runner user
