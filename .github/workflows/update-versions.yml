@@ -12,12 +12,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Read current versions
-        id: read_versions
+      - name: Set up Git
         run: |
-          source versions.env
-          echo "CURRENT_RUNNER_VERSION=$RUNNER_VERSION" >> $GITHUB_ENV
-          echo "CURRENT_HOOKS_VERSION=$RUNNER_CONTAINER_HOOKS_VERSION" >> $GITHUB_ENV
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Load current versions
+        id: versions
+        uses: actions/dotenv-action@v1.1.4
+        with:
+          export-variables: true
 
       - name: Fetch latest releases
         id: fetch_latest
@@ -29,22 +33,23 @@ jobs:
           echo "LATEST_RUNNER=$LATEST_RUNNER" >> $GITHUB_ENV
           echo "LATEST_HOOKS=$LATEST_HOOKS" >> $GITHUB_ENV
 
-
-      - name: Update versions.env if needed
+      - name: Update .env if needed
         id: update
         run: |
           UPDATED=false
           if [ "$CURRENT_RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
-            sed -i "s/^RUNNER_VERSION=.*/RUNNER_VERSION=$LATEST_RUNNER/" versions.env
+            sed -i "s/^RUNNER_VERSION=.*/RUNNER_VERSION=$LATEST_RUNNER/" .env
             UPDATED=true
           fi
           if [ "$CURRENT_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
-            sed -i "s/^RUNNER_CONTAINER_HOOKS_VERSION=.*/RUNNER_CONTAINER_HOOKS_VERSION=$LATEST_HOOKS/" versions.env
+            sed -i "s/^RUNNER_CONTAINER_HOOKS_VERSION=.*/RUNNER_CONTAINER_HOOKS_VERSION=$LATEST_HOOKS/" .env
             UPDATED=true
           fi
-          git status
-          git diff
           echo "UPDATED=$UPDATED" >> $GITHUB_OUTPUT
+
+      - name: Show changes
+        if: steps.update.outputs.UPDATED == 'true'
+        run: git diff --color=always
 
       - name: Create or update PR if versions changed
         if: steps.update.outputs.UPDATED == 'true'
@@ -53,7 +58,7 @@ jobs:
         run: |
           BRANCH=update-runner-versions
           git checkout -B $BRANCH
-          git add versions.env
+          git add .env
           git commit -m "Update GitHub Actions runner versions" || echo "No changes to commit"
           git push --set-upstream origin $BRANCH --force
 
