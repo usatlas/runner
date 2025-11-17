@@ -45,22 +45,23 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          if [[ $GITHUB_REF == refs/pull/* ]]; then
-            VERSION=pr-${{ github.event.number }}
-          else
-            VERSION=latest
-          fi
-          TAGS="${{ env.IMAGE_NAME }}:${VERSION},${{ env.IMAGE_NAME }}:latest,${{ env.IMAGE_NAME }}:sha-${GITHUB_SHA::8}"
-          TAGS="$TAGS,${{ env.IMAGE_NAME }}:${{ env.RUNNER_VERSION }}-latest,${{ env.IMAGE_NAME }}:${{ env.RUNNER_VERSION }}-${{ env.RUNNER_CONTAINER_HOOKS_VERSION }}"
-          TAGS="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
-          TAGS="$TAGS,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${GITHUB_SHA::8}"
-          TAGS="$TAGS,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.RUNNER_VERSION }}-latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.RUNNER_VERSION }}-${{ env.RUNNER_CONTAINER_HOOKS_VERSION }}"
-          echo "steps.prep.outputs.version=${VERSION}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "steps.prep.outputs.tags=${TAGS}"
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
           echo "steps.prep.outputs.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=edge,branch=main
+            type=sha,format=short
+            type=ref,event=pr
+            type=raw,value=latest
+            type=raw,value=${{ env.RUNNER_VERSION }}-latest
+            type=raw,value=${{ env.RUNNER_VERSION }}-${{ env.RUNNER_CONTAINER_HOOKS_VERSION }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -93,7 +94,7 @@ jobs:
         with:
           context: .
           file: images/Dockerfile
-          tags: ${{ steps.prep.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
@@ -120,7 +121,7 @@ jobs:
         with:
           context: .
           file: images/Dockerfile
-          tags: ${{ steps.prep.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.html_url }}
             org.opencontainers.image.created=${{ steps.prep.outputs.created }}
