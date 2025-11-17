@@ -42,12 +42,6 @@ jobs:
           export-variables: true
           keys-case: "upper"
 
-      - name: Prepare
-        id: prep
-        run: |
-          echo "steps.prep.outputs.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -88,49 +82,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Test build
+      - name: Build and push
         id: build-only
         uses: docker/build-push-action@v6
         with:
           context: .
           file: images/Dockerfile
           tags: ${{ steps.meta.outputs.tags }}
-          labels: |
-            org.opencontainers.image.source=${{ github.event.repository.html_url }}
-            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.revision=${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             RUNNER_VERSION=${{ env.RUNNER_VERSION }}
             RUNNER_CONTAINER_HOOKS_VERSION=${{ env.RUNNER_CONTAINER_HOOKS_VERSION }}
           load: true
-          push: false
-
-      - name: Image digest
-        run: echo ${{ steps.build-only.outputs.digest }}
-
-      - name: List built images
-        run: docker images
-
-      - name: Build and publish to registry
-        # every PR will trigger a push event on main, so check the push event is actually coming from main
-        if:
-          github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-          github.repository == 'usatlas/runner'
-        id: build-and-push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: images/Dockerfile
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: |
-            org.opencontainers.image.source=${{ github.event.repository.html_url }}
-            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
-            org.opencontainers.image.revision=${{ github.sha }}
-          build-args: |
-            RUNNER_VERSION=${{ env.RUNNER_VERSION }}
-            RUNNER_CONTAINER_HOOKS_VERSION=${{ env.RUNNER_CONTAINER_HOOKS_VERSION }}
-          push: true
-          platforms: linux/amd64,linux/arm64
+          push:
+            ${{ github.event_name == 'pull_request' && github.ref ==
+            'refs/heads/main' && github.repository == 'usatlas/runner' }}
 
       - name: Generate attestation
         # every PR will trigger a push event on main, so check the push event is actually coming from main
@@ -142,3 +108,9 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.build-and-push.outputs.digest }}
           push-to-registry: true
+
+      - name: Image digest
+        run: echo ${{ steps.build-only.outputs.digest }}
+
+      - name: List built images
+        run: docker images
