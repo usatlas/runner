@@ -98,6 +98,9 @@ jobs:
           push:
             ${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
             && github.repository == 'usatlas/runner' }}
+          # https://github.com/orgs/community/discussions/45969#discussioncomment-13352049
+          provenance: false # Disable provenance to avoid unknown/unknown
+          sbom: false # Disable sbom to avoid unknown/unknown
 
       - name: Generate attestation
         # every PR will trigger a push event on main, so check the push event is actually coming from main
