@@ -62,7 +62,7 @@ jobs:
           UPDATED=false
 
           # Update .env for each changed version
-          echo "$COMPONENTS" | jq -c '.[]' | while read -r component; do
+          while read -r component; do
             VAR=$(echo "$component" | jq -r '.var')
             CURRENT="${!VAR}"
             LATEST_VAR="LATEST_$VAR"
@@ -73,9 +73,10 @@ jobs:
               sed -i "s/^$VAR=.*/$VAR=$LATEST/" .env
               UPDATED=true
             fi
-          done
+          done < <(echo "$COMPONENTS" | jq -c '.[]')
 
           echo "UPDATED=$UPDATED" >> $GITHUB_OUTPUT
+          echo "UPDATED=$UPDATED"
 
       - name: Show changes
         if: steps.update.outputs.UPDATED == 'true'
