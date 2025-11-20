@@ -83,7 +83,7 @@ jobs:
         run: git diff --color=always
 
       - name: Create or update PR if versions changed
-        if: steps.update.outputs.UPDATED == 'true' and false
+        if: steps.update.outputs.UPDATED == 'true' && false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
