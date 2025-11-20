@@ -70,6 +70,8 @@ chmod 440 /etc/sudoers.d/runner
 curl -fLo docker.tgz "https://download.docker.com/${TARGETOS}/static/stable/${DOCKER_ARCH}/docker-${DOCKER_VERSION}.tgz"
 tar zxvf docker.tgz
 rm docker.tgz
+install -o root -g root -m 755 docker/* /usr/bin/
+rm -rf docker
 
 # Install docker-buildx plugin
 mkdir -p /usr/local/lib/docker/cli-plugins
