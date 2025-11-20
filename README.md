@@ -12,7 +12,9 @@ example:
 
 ```
 RUNNER_VERSION=2.329.0
-RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
+RUNNER_CONTAINER_HOOKS_VERSION=0.8.0
+DOCKER_VERSION="29.0.1"
+BUILDX_VERSION="0.30.0"
 ```
 
 These values are automatically updated by the automated version update workflow.
@@ -46,7 +48,7 @@ Multiple tags are created for each build to support different use cases:
 
 ### Versioning Concepts
 
-The Docker images use two independent version numbers:
+The Docker images use four independent version numbers:
 
 - **Runner Version** (`RUNNER_VERSION`): The version of the GitHub Actions
   runner software itself, from
@@ -54,8 +56,13 @@ The Docker images use two independent version numbers:
 - **Runner Container Hooks Version** (`RUNNER_CONTAINER_HOOKS_VERSION`): The
   version of container hooks for Kubernetes integration, from
   [actions/runner-container-hooks](https://github.com/actions/runner-container-hooks/releases)
+- **Docker Version** (`DOCKER_VERSION`): The version of Docker Engine included
+  in the image, from [moby/moby](https://github.com/moby/moby/releases)
+- **Buildx Version** (`BUILDX_VERSION`): The version of Docker Buildx plugin
+  included in the image, from
+  [docker/buildx](https://github.com/docker/buildx/releases)
 
-Both versions are stored in the `.env` file and automatically updated by the
+All versions are stored in the `.env` file and automatically updated by the
 version update workflow.
 
 ### Usage Examples
@@ -94,9 +101,10 @@ interacting with GitHub's API, runs the following steps:
 When versions change, the commit message looks like:
 
 ```
-Update GitHub Actions runner versions
+Update component versions
 
-- Container Hooks: [0.7.0](https://github.com/actions/runner-container-hooks/releases/tag/v0.7.0) → [0.8.0](https://github.com/actions/runner-container-hooks/releases/tag/v0.8.0)
+- Runner: [2.329.0](https://github.com/actions/runner/releases/tag/v2.329.0) → [2.330.0](https://github.com/actions/runner/releases/tag/v2.330.0)
+- Docker: [29.0.0](https://github.com/moby/moby/releases/tag/v29.0.0) → [29.0.1](https://github.com/moby/moby/releases/tag/v29.0.1)
 ```
 
 Commit messages only include entries for components that actually changed.

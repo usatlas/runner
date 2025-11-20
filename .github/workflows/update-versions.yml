@@ -30,23 +30,48 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LATEST_RUNNER=$(gh api repos/actions/runner/releases -q '.[0].tag_name' | tr -d 'v')
-          LATEST_HOOKS=$(gh api repos/actions/runner-container-hooks/releases -q '.[0].tag_name' | tr -d 'v')
-          echo "LATEST_RUNNER=$LATEST_RUNNER" >> $GITHUB_ENV
-          echo "LATEST_HOOKS=$LATEST_HOOKS" >> $GITHUB_ENV
+          # Define mapping of env variables to GitHub repos
+          declare -A REPOS=(
+            [RUNNER_VERSION]="actions/runner"
+            [RUNNER_CONTAINER_HOOKS_VERSION]="actions/runner-container-hooks"
+            [DOCKER_VERSION]="moby/moby"
+            [BUILDX_VERSION]="docker/buildx"
+          )
+
+          # Fetch latest version for each repo
+          for VAR in "${!REPOS[@]}"; do
+            REPO="${REPOS[$VAR]}"
+            LATEST=$(gh api repos/$REPO/releases -q '.[0].tag_name' | tr -d 'v')
+            echo "LATEST_$VAR=$LATEST" >> $GITHUB_ENV
+            echo "Fetched $VAR: $LATEST from $REPO"
+          done
 
       - name: Update .env if needed
         id: update
         run: |
           UPDATED=false
-          if [ "$RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
-            sed -i "s/^RUNNER_VERSION=.*/RUNNER_VERSION=$LATEST_RUNNER/" .env
-            UPDATED=true
-          fi
-          if [ "$RUNNER_CONTAINER_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
-            sed -i "s/^RUNNER_CONTAINER_HOOKS_VERSION=.*/RUNNER_CONTAINER_HOOKS_VERSION=$LATEST_HOOKS/" .env
-            UPDATED=true
-          fi
+
+          # List of all version variables to check
+          VARS=(
+            "RUNNER_VERSION"
+            "RUNNER_CONTAINER_HOOKS_VERSION"
+            "DOCKER_VERSION"
+            "BUILDX_VERSION"
+          )
+
+          # Update .env for each changed version
+          for VAR in "${VARS[@]}"; do
+            CURRENT="${!VAR}"
+            LATEST_VAR="LATEST_$VAR"
+            LATEST="${!LATEST_VAR}"
+
+            if [ "$CURRENT" != "$LATEST" ]; then
+              echo "Updating $VAR: $CURRENT → $LATEST"
+              sed -i "s/^$VAR=.*/$VAR=$LATEST/" .env
+              UPDATED=true
+            fi
+          done
+
           echo "UPDATED=$UPDATED" >> $GITHUB_OUTPUT
 
       - name: Show changes
@@ -62,20 +87,47 @@ jobs:
           BRANCH=update-runner-versions
           git checkout -B $BRANCH
 
-          COMMIT_MSG="Update GitHub Actions runner versions"
+          # Define friendly names for commit messages
+          declare -A FRIENDLY_NAMES=(
+            [RUNNER_VERSION]="Runner"
+            [RUNNER_CONTAINER_HOOKS_VERSION]="Container Hooks"
+            [DOCKER_VERSION]="Docker"
+            [BUILDX_VERSION]="Buildx"
+          )
 
-          # Build a message only for changed versions
+          # Define GitHub repos for links
+          declare -A REPOS=(
+            [RUNNER_VERSION]="actions/runner"
+            [RUNNER_CONTAINER_HOOKS_VERSION]="actions/runner-container-hooks"
+            [DOCKER_VERSION]="moby/moby"
+            [BUILDX_VERSION]="docker/buildx"
+          )
+
+          COMMIT_MSG="Update component versions"
           MSG_LINES=()
-          if [ "$RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
-            MSG_LINES+=("- Runner: [$RUNNER_VERSION](https://github.com/actions/runner/releases/tag/v$RUNNER_VERSION) → [$LATEST_RUNNER](https://github.com/actions/runner/releases/tag/v$LATEST_RUNNER)")
-          fi
 
-          if [ "$RUNNER_CONTAINER_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
-            MSG_LINES+=("- Container Hooks: [$RUNNER_CONTAINER_HOOKS_VERSION](https://github.com/actions/runner-container-hooks/releases/tag/v$RUNNER_CONTAINER_HOOKS_VERSION) → [$LATEST_HOOKS](https://github.com/actions/runner-container-hooks/releases/tag/v$LATEST_HOOKS)")
-          fi
+          # Build message lines for changed versions
+          VARS=(
+            "RUNNER_VERSION"
+            "RUNNER_CONTAINER_HOOKS_VERSION"
+            "DOCKER_VERSION"
+            "BUILDX_VERSION"
+          )
+
+          for VAR in "${VARS[@]}"; do
+            CURRENT="${!VAR}"
+            LATEST_VAR="LATEST_$VAR"
+            LATEST="${!LATEST_VAR}"
+
+            if [ "$CURRENT" != "$LATEST" ]; then
+              FRIENDLY="${FRIENDLY_NAMES[$VAR]}"
+              REPO="${REPOS[$VAR]}"
+              MSG_LINES+=("- $FRIENDLY: [$CURRENT](https://github.com/$REPO/releases/tag/v$CURRENT) → [$LATEST](https://github.com/$REPO/releases/tag/v$LATEST)")
+            fi
+          done
 
           if [ ${#MSG_LINES[@]} -gt 0 ]; then
-            COMMIT_MSG=$(printf "Update GitHub Actions runner versions\n\n%s" "$(printf "%s\n" "${MSG_LINES[@]}")")
+            COMMIT_MSG=$(printf "Update component versions\n\n%s" "$(printf "%s\n" "${MSG_LINES[@]}")")
           fi
 
           git add .env
@@ -86,7 +138,7 @@ jobs:
           EXISTING_PR=$(gh pr list --head $BRANCH --json number -q '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
             gh pr create \
-              --title "Update runner and container hooks versions" \
+              --title "Update component versions" \
               --body "$COMMIT_MSG" \
               --base main \
               --head $BRANCH
