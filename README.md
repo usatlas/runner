@@ -108,19 +108,19 @@ To add a new component for automated version tracking:
 
 2. **Update `.github/workflows/update-versions.yml`** top-level `env` section:
 
-   Add corresponding values to all three arrays (order matters - they're
-   parallel arrays):
+   Add a new object to the `COMPONENTS` JSON array:
 
    ```yaml
    env:
-     VERSION_VARS:
-       '("RUNNER_VERSION" "RUNNER_CONTAINER_HOOKS_VERSION" "DOCKER_VERSION"
-       "BUILDX_VERSION" "NEW_COMPONENT_VERSION")'
-     REPOS:
-       '("actions/runner" "actions/runner-container-hooks" "moby/moby"
-       "docker/buildx" "org/repo")'
-     FRIENDLY_NAMES:
-       '("Runner" "Container Hooks" "Docker" "Buildx" "Friendly Name")'
+     COMPONENTS: >-
+       [
+         {"var": "RUNNER_VERSION", "repo": "actions/runner", "name": "Runner"},
+         {"var": "RUNNER_CONTAINER_HOOKS_VERSION", "repo":
+       "actions/runner-container-hooks", "name": "Container Hooks"},
+         {"var": "DOCKER_VERSION", "repo": "moby/moby", "name": "Docker"},
+         {"var": "BUILDX_VERSION", "repo": "docker/buildx", "name": "Buildx"},
+         {"var": "NEW_COMPONENT_VERSION", "repo": "org/repo", "name": "Friendly
+       Name"} ]
    ```
 
 3. **(Optional) Update README.md** to document the new component:
