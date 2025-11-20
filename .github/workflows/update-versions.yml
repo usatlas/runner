@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: "0 6 * * *" # daily 06:00 UTC
   workflow_dispatch:
+  push:
 
 # Configuration for version tracking - add new components here
 env:
@@ -82,7 +83,7 @@ jobs:
         run: git diff --color=always
 
       - name: Create or update PR if versions changed
-        if: steps.update.outputs.UPDATED == 'true'
+        if: steps.update.outputs.UPDATED == 'true' and false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
