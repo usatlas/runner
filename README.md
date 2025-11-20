@@ -96,6 +96,40 @@ interacting with GitHub's API, runs the following steps:
    - A commit is created with a message summarizing exactly what changed.
    - A pull request is automatically opened.
 
+### Adding a New Component to Track
+
+To add a new component for automated version tracking:
+
+1. **Add the variable to `.env`** with its initial version:
+
+   ```bash
+   NEW_COMPONENT_VERSION="1.0.0"
+   ```
+
+2. **Update `.github/workflows/update-versions.yml`** top-level `env` section:
+
+   Add corresponding values to all three arrays (order matters - they're
+   parallel arrays):
+
+   ```yaml
+   env:
+     VERSION_VARS:
+       '("RUNNER_VERSION" "RUNNER_CONTAINER_HOOKS_VERSION" "DOCKER_VERSION"
+       "BUILDX_VERSION" "NEW_COMPONENT_VERSION")'
+     REPOS:
+       '("actions/runner" "actions/runner-container-hooks" "moby/moby"
+       "docker/buildx" "org/repo")'
+     FRIENDLY_NAMES:
+       '("Runner" "Container Hooks" "Docker" "Buildx" "Friendly Name")'
+   ```
+
+3. **(Optional) Update README.md** to document the new component:
+   - Add to the Configuration section's `.env` example
+   - Add to the Versioning Concepts section with description
+
+That's it! The workflow loops will automatically handle fetching, updating, and
+including the new component in commit messages.
+
 ### 📝 Example Commit Message
 
 When versions change, the commit message looks like:
