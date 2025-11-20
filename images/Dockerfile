@@ -27,6 +27,7 @@ ARG BUILDX_VERSION
 # Runner environment
 ENV RUNNER_MANUALLY_TRAP_SIG=1
 ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
+ENV ImageOS=almalinux9
 
 WORKDIR /home/runner
 
@@ -51,7 +52,7 @@ esac
 echo "Using ARCH_PATH=$ARCH_PATH, DOCKER_ARCH=$DOCKER_ARCH, RUNNER_ARCH=$RUNNER_ARCH"
 
 # Install dependencies
-dnf install -y curl unzip sudo tar gzip
+dnf install -y curl unzip sudo tar gzip man-db
 
 # For HEP_OSLibs: https://gitlab.cern.ch/linuxsupport/rpms/HEP_OSlibs
 dnf install -y https://linuxsoft.cern.ch/wlcg/el9/${ARCH_PATH}/wlcg-repo-1.0.0-1.el9.noarch.rpm
@@ -88,6 +89,9 @@ rm runner.tar.gz
 curl -f -L -o runner-container-hooks.zip "https://github.com/actions/runner-container-hooks/releases/download/v${RUNNER_CONTAINER_HOOKS_VERSION}/actions-runner-hooks-k8s-${RUNNER_CONTAINER_HOOKS_VERSION}.zip"
 unzip runner-container-hooks.zip -d ./k8s
 rm runner-container-hooks.zip
+
+# Clean up any remaining things
+rm -fr /var/lib/yum/* /var/cache/yum/* /usr/share/doc/* /boot/* /qemu_*.core
 EOF
 
 USER runner
