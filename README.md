@@ -12,7 +12,9 @@ example:
 
 ```
 RUNNER_VERSION=2.329.0
-RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
+RUNNER_CONTAINER_HOOKS_VERSION=0.8.0
+DOCKER_VERSION="29.0.1"
+BUILDX_VERSION="0.30.0"
 ```
 
 These values are automatically updated by the automated version update workflow.
@@ -46,7 +48,7 @@ Multiple tags are created for each build to support different use cases:
 
 ### Versioning Concepts
 
-The Docker images use two independent version numbers:
+The Docker images use four independent version numbers:
 
 - **Runner Version** (`RUNNER_VERSION`): The version of the GitHub Actions
   runner software itself, from
@@ -54,8 +56,13 @@ The Docker images use two independent version numbers:
 - **Runner Container Hooks Version** (`RUNNER_CONTAINER_HOOKS_VERSION`): The
   version of container hooks for Kubernetes integration, from
   [actions/runner-container-hooks](https://github.com/actions/runner-container-hooks/releases)
+- **Docker Version** (`DOCKER_VERSION`): The version of Docker Engine included
+  in the image, from [moby/moby](https://github.com/moby/moby/releases)
+- **Buildx Version** (`BUILDX_VERSION`): The version of Docker Buildx plugin
+  included in the image, from
+  [docker/buildx](https://github.com/docker/buildx/releases)
 
-Both versions are stored in the `.env` file and automatically updated by the
+All versions are stored in the `.env` file and automatically updated by the
 version update workflow.
 
 ### Usage Examples
@@ -89,14 +96,49 @@ interacting with GitHub's API, runs the following steps:
    - A commit is created with a message summarizing exactly what changed.
    - A pull request is automatically opened.
 
+### Adding a New Component to Track
+
+To add a new component for automated version tracking:
+
+1. **Add the variable to `.env`** with its initial version:
+
+   ```bash
+   NEW_COMPONENT_VERSION="1.0.0"
+   ```
+
+2. **Update `.github/workflows/update-versions.yml`** top-level `env` section:
+
+   Add a new object to the `COMPONENTS` JSON array:
+
+   ```yaml
+   env:
+     COMPONENTS: >-
+       [
+         {"var": "RUNNER_VERSION", "repo": "actions/runner", "name": "Runner"},
+         {"var": "RUNNER_CONTAINER_HOOKS_VERSION", "repo":
+       "actions/runner-container-hooks", "name": "Container Hooks"},
+         {"var": "DOCKER_VERSION", "repo": "moby/moby", "name": "Docker"},
+         {"var": "BUILDX_VERSION", "repo": "docker/buildx", "name": "Buildx"},
+         {"var": "NEW_COMPONENT_VERSION", "repo": "org/repo", "name": "Friendly
+       Name"} ]
+   ```
+
+3. **(Optional) Update README.md** to document the new component:
+   - Add to the Configuration section's `.env` example
+   - Add to the Versioning Concepts section with description
+
+That's it! The workflow loops will automatically handle fetching, updating, and
+including the new component in commit messages.
+
 ### 📝 Example Commit Message
 
 When versions change, the commit message looks like:
 
 ```
-Update GitHub Actions runner versions
+Update component versions
 
-- Container Hooks: [0.7.0](https://github.com/actions/runner-container-hooks/releases/tag/v0.7.0) → [0.8.0](https://github.com/actions/runner-container-hooks/releases/tag/v0.8.0)
+- Runner: [2.329.0](https://github.com/actions/runner/releases/tag/v2.329.0) → [2.330.0](https://github.com/actions/runner/releases/tag/v2.330.0)
+- Docker: [29.0.0](https://github.com/moby/moby/releases/tag/v29.0.0) → [29.0.1](https://github.com/moby/moby/releases/tag/v29.0.1)
 ```
 
 Commit messages only include entries for components that actually changed.

@@ -57,6 +57,18 @@ jobs:
             type=raw,value=${{ env.RUNNER_VERSION }}-latest
             type=raw,value=${{ env.RUNNER_VERSION }}-${{ env.RUNNER_CONTAINER_HOOKS_VERSION }}
 
+      # needed to load multi-arch images
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v4
+        with:
+          daemon-config: |
+            {
+              "debug": true,
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 

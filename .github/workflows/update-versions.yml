@@ -5,6 +5,17 @@ on:
     - cron: "0 6 * * *" # daily 06:00 UTC
   workflow_dispatch:
 
+# Configuration for version tracking - add new components here
+env:
+  COMPONENTS: >-
+    [
+      {"var": "RUNNER_VERSION", "repo": "actions/runner", "name": "Runner"},
+      {"var": "RUNNER_CONTAINER_HOOKS_VERSION", "repo":
+    "actions/runner-container-hooks", "name": "Container Hooks"},
+      {"var": "DOCKER_VERSION", "repo": "moby/moby", "name": "Docker"},
+      {"var": "BUILDX_VERSION", "repo": "docker/buildx", "name": "Buildx"}
+    ]
+
 jobs:
   update-versions:
     runs-on: ubuntu-latest
@@ -30,23 +41,40 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LATEST_RUNNER=$(gh api repos/actions/runner/releases -q '.[0].tag_name' | tr -d 'v')
-          LATEST_HOOKS=$(gh api repos/actions/runner-container-hooks/releases -q '.[0].tag_name' | tr -d 'v')
-          echo "LATEST_RUNNER=$LATEST_RUNNER" >> $GITHUB_ENV
-          echo "LATEST_HOOKS=$LATEST_HOOKS" >> $GITHUB_ENV
+          # Load configuration from top-level env using jq
+          COMPONENTS='${{ env.COMPONENTS }}'
+
+          # Fetch latest version for each component
+          echo "$COMPONENTS" | jq -c '.[]' | while read -r component; do
+            VAR=$(echo "$component" | jq -r '.var')
+            REPO=$(echo "$component" | jq -r '.repo')
+            LATEST=$(gh api repos/$REPO/releases -q '.[0].tag_name' | tr -d 'v')
+            echo "LATEST_$VAR=$LATEST" >> $GITHUB_ENV
+            echo "Fetched $VAR: $LATEST from $REPO"
+          done
 
       - name: Update .env if needed
         id: update
         run: |
+          # Load configuration from top-level env using jq
+          COMPONENTS='${{ env.COMPONENTS }}'
+
           UPDATED=false
-          if [ "$RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
-            sed -i "s/^RUNNER_VERSION=.*/RUNNER_VERSION=$LATEST_RUNNER/" .env
-            UPDATED=true
-          fi
-          if [ "$RUNNER_CONTAINER_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
-            sed -i "s/^RUNNER_CONTAINER_HOOKS_VERSION=.*/RUNNER_CONTAINER_HOOKS_VERSION=$LATEST_HOOKS/" .env
-            UPDATED=true
-          fi
+
+          # Update .env for each changed version
+          echo "$COMPONENTS" | jq -c '.[]' | while read -r component; do
+            VAR=$(echo "$component" | jq -r '.var')
+            CURRENT="${!VAR}"
+            LATEST_VAR="LATEST_$VAR"
+            LATEST="${!LATEST_VAR}"
+
+            if [ "$CURRENT" != "$LATEST" ]; then
+              echo "Updating $VAR: $CURRENT → $LATEST"
+              sed -i "s/^$VAR=.*/$VAR=$LATEST/" .env
+              UPDATED=true
+            fi
+          done
+
           echo "UPDATED=$UPDATED" >> $GITHUB_OUTPUT
 
       - name: Show changes
@@ -59,23 +87,32 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
+          # Load configuration from top-level env using jq
+          COMPONENTS='${{ env.COMPONENTS }}'
+
           BRANCH=update-runner-versions
           git checkout -B $BRANCH
 
-          COMMIT_MSG="Update GitHub Actions runner versions"
-
-          # Build a message only for changed versions
+          COMMIT_MSG="Update component versions"
           MSG_LINES=()
-          if [ "$RUNNER_VERSION" != "$LATEST_RUNNER" ]; then
-            MSG_LINES+=("- Runner: [$RUNNER_VERSION](https://github.com/actions/runner/releases/tag/v$RUNNER_VERSION) → [$LATEST_RUNNER](https://github.com/actions/runner/releases/tag/v$LATEST_RUNNER)")
-          fi
 
-          if [ "$RUNNER_CONTAINER_HOOKS_VERSION" != "$LATEST_HOOKS" ]; then
-            MSG_LINES+=("- Container Hooks: [$RUNNER_CONTAINER_HOOKS_VERSION](https://github.com/actions/runner-container-hooks/releases/tag/v$RUNNER_CONTAINER_HOOKS_VERSION) → [$LATEST_HOOKS](https://github.com/actions/runner-container-hooks/releases/tag/v$LATEST_HOOKS)")
-          fi
+          # Build message lines for changed versions
+          echo "$COMPONENTS" | jq -c '.[]' | while read -r component; do
+            VAR=$(echo "$component" | jq -r '.var')
+            REPO=$(echo "$component" | jq -r '.repo')
+            FRIENDLY=$(echo "$component" | jq -r '.name')
+
+            CURRENT="${!VAR}"
+            LATEST_VAR="LATEST_$VAR"
+            LATEST="${!LATEST_VAR}"
+
+            if [ "$CURRENT" != "$LATEST" ]; then
+              MSG_LINES+=("- $FRIENDLY: [$CURRENT](https://github.com/$REPO/releases/tag/v$CURRENT) → [$LATEST](https://github.com/$REPO/releases/tag/v$LATEST)")
+            fi
+          done
 
           if [ ${#MSG_LINES[@]} -gt 0 ]; then
-            COMMIT_MSG=$(printf "Update GitHub Actions runner versions\n\n%s" "$(printf "%s\n" "${MSG_LINES[@]}")")
+            COMMIT_MSG=$(printf "Update component versions\n\n%s" "$(printf "%s\n" "${MSG_LINES[@]}")")
           fi
 
           git add .env
@@ -86,7 +123,7 @@ jobs:
           EXISTING_PR=$(gh pr list --head $BRANCH --json number -q '.[0].number')
           if [ -z "$EXISTING_PR" ]; then
             gh pr create \
-              --title "Update runner and container hooks versions" \
+              --title "Update component versions" \
               --body "$COMMIT_MSG" \
               --base main \
               --head $BRANCH
