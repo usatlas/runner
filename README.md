@@ -114,14 +114,22 @@ To add a new component for automated version tracking:
    env:
      COMPONENTS: >-
        [
-         {"var": "RUNNER_VERSION", "repo": "actions/runner", "name": "Runner"},
+         {"var": "RUNNER_VERSION", "repo": "actions/runner", "name": "Runner",
+       "prefix": "v"},
          {"var": "RUNNER_CONTAINER_HOOKS_VERSION", "repo":
-       "actions/runner-container-hooks", "name": "Container Hooks"},
-         {"var": "DOCKER_VERSION", "repo": "moby/moby", "name": "Docker"},
-         {"var": "BUILDX_VERSION", "repo": "docker/buildx", "name": "Buildx"},
+       "actions/runner-container-hooks", "name": "Container Hooks", "prefix":
+       "v"},
+         {"var": "DOCKER_VERSION", "repo": "moby/moby", "name": "Docker",
+       "prefix": "docker-v"},
+         {"var": "BUILDX_VERSION", "repo": "docker/buildx", "name": "Buildx",
+       "prefix": "v"},
          {"var": "NEW_COMPONENT_VERSION", "repo": "org/repo", "name": "Friendly
-       Name"} ]
+       Name", "prefix": "v"} ]
    ```
+
+   The `prefix` field specifies what to strip from the release tag to get the
+   version number (e.g., `v2.329.0` → `2.329.0`, or `docker-v29.0.1` →
+   `29.0.1`).
 
 3. **(Optional) Update README.md** to document the new component:
    - Add to the Configuration section's `.env` example

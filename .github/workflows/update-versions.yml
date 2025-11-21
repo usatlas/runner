@@ -9,12 +9,14 @@ on:
 env:
   COMPONENTS: >-
     [
-      {"var": "RUNNER_VERSION", "repo": "actions/runner", "name": "Runner"},
+      {"var": "RUNNER_VERSION", "repo": "actions/runner", "name": "Runner",
+    "prefix": "v"},
       {"var": "RUNNER_CONTAINER_HOOKS_VERSION", "repo":
-    "actions/runner-container-hooks", "name": "Container Hooks"},
-      {"var": "DOCKER_VERSION", "repo": "moby/moby", "name": "Docker"},
-      {"var": "BUILDX_VERSION", "repo": "docker/buildx", "name": "Buildx"}
-    ]
+    "actions/runner-container-hooks", "name": "Container Hooks", "prefix": "v"},
+      {"var": "DOCKER_VERSION", "repo": "moby/moby", "name": "Docker", "prefix":
+    "docker-v"},
+      {"var": "BUILDX_VERSION", "repo": "docker/buildx", "name": "Buildx",
+    "prefix": "v"} ]
 
 jobs:
   update-versions:
@@ -48,9 +50,11 @@ jobs:
           echo "$COMPONENTS" | jq -c '.[]' | while read -r component; do
             VAR=$(echo "$component" | jq -r '.var')
             REPO=$(echo "$component" | jq -r '.repo')
-            LATEST=$(gh api repos/$REPO/releases -q '.[0].tag_name' | tr -d 'v')
+            PREFIX=$(echo "$component" | jq -r '.prefix')
+            TAG=$(gh api repos/$REPO/releases -q '.[0].tag_name')
+            LATEST="${TAG#$PREFIX}"  # Strip prefix from tag
             echo "LATEST_$VAR=$LATEST" >> $GITHUB_ENV
-            echo "Fetched $VAR: $LATEST from $REPO"
+            echo "Fetched $VAR: $LATEST from $REPO (tag: $TAG)"
           done
 
       - name: Update .env if needed
