@@ -98,7 +98,7 @@ jobs:
           MSG_LINES=()
 
           # Build message lines for changed versions
-          echo "$COMPONENTS" | jq -c '.[]' | while read -r component; do
+          while read -r component; do
             VAR=$(echo "$component" | jq -r '.var')
             REPO=$(echo "$component" | jq -r '.repo')
             FRIENDLY=$(echo "$component" | jq -r '.name')
@@ -110,7 +110,7 @@ jobs:
             if [ "$CURRENT" != "$LATEST" ]; then
               MSG_LINES+=("- $FRIENDLY: [$CURRENT](https://github.com/$REPO/releases/tag/v$CURRENT) → [$LATEST](https://github.com/$REPO/releases/tag/v$LATEST)")
             fi
-          done
+          done < <(echo "$COMPONENTS" | jq -c '.[]')
 
           if [ ${#MSG_LINES[@]} -gt 0 ]; then
             COMMIT_MSG=$(printf "Update component versions\n\n%s" "$(printf "%s\n" "${MSG_LINES[@]}")")
