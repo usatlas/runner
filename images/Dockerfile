@@ -52,11 +52,11 @@ esac
 echo "Using ARCH_PATH=$ARCH_PATH, DOCKER_ARCH=$DOCKER_ARCH, RUNNER_ARCH=$RUNNER_ARCH"
 
 # Install dependencies
-dnf install -y curl unzip sudo tar gzip man-db epel-release
+dnf install --refresh -y curl unzip sudo tar gzip man-db epel-release
 
 # For HEP_OSLibs: https://gitlab.cern.ch/linuxsupport/rpms/HEP_OSlibs
-dnf install -y https://linuxsoft.cern.ch/wlcg/el9/${ARCH_PATH}/wlcg-repo-1.0.0-1.el9.noarch.rpm
-dnf install -y HEP_OSlibs
+dnf install --refresh -y https://linuxsoft.cern.ch/wlcg/el9/${ARCH_PATH}/wlcg-repo-1.0.0-1.el9.noarch.rpm
+dnf install --refresh -y HEP_OSlibs
 dnf clean all
 
 # Create runner user
