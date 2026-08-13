@@ -5,6 +5,12 @@ on:
     - cron: "0 6 * * *" # daily 06:00 UTC
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
 # Configuration for version tracking - add new components here
 env:
   COMPONENTS: >-
@@ -20,10 +26,16 @@ env:
 
 jobs:
   update-versions:
+    name: Update Runner Versions
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the update-runner-versions branch
+      pull-requests: write # open/update the version-bump PR
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true # git push and gh pr create need the token below
 
       - name: Set up Git
         run: |
@@ -32,7 +44,7 @@ jobs:
 
       - name: Load current versions
         id: versions
-        uses: falti/dotenv-action@v1.1.4
+        uses: falti/dotenv-action@fff81fa3263fb96221c521b5e526e57c0c56d760 # v1.2.1
         with:
           log-variables: true
           export-variables: true
@@ -43,9 +55,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Load configuration from top-level env using jq
-          COMPONENTS='${{ env.COMPONENTS }}'
-
+          # COMPONENTS is already exposed as an env var from the workflow-level env: block
           # Fetch latest version for each component
           echo "$COMPONENTS" | jq -c '.[]' | while read -r component; do
             VAR=$(echo "$component" | jq -r '.var')
@@ -60,9 +70,7 @@ jobs:
       - name: Update .env if needed
         id: update
         run: |
-          # Load configuration from top-level env using jq
-          COMPONENTS='${{ env.COMPONENTS }}'
-
+          # COMPONENTS is already exposed as an env var from the workflow-level env: block
           UPDATED=false
 
           # Update .env for each changed version
@@ -92,9 +100,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          # Load configuration from top-level env using jq
-          COMPONENTS='${{ env.COMPONENTS }}'
-
+          # COMPONENTS is already exposed as an env var from the workflow-level env: block
           BRANCH=update-runner-versions
           git checkout -B $BRANCH
 
